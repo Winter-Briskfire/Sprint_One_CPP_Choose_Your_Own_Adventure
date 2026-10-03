@@ -7,7 +7,7 @@ A science-fiction choose-your-own-adventure game written in C++ for CSE 310.
 On Windows with MSYS2 MinGW, run:
 
 ```powershell
-g++ -std=c++17 -Wall -Wextra -mwindows CYOA_main.cpp -o CYOA_game.exe -lgdi32
+   g++ -std=c++17 -Wall -Wextra -mwindows CYOA_main.cpp GameUI.cpp Scenes.cpp -o CYOA_game.exe -lgdi32
 .\CYOA_game.exe
 ```
 
