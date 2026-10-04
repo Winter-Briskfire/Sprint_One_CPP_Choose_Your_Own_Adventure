@@ -28,11 +28,11 @@ int main() {
         case Calling::Scholar: ruinsStart(hero); break;
     }
 
-    extendedMission(hero);
+    bool routeToComms = extendedMission(hero);
 
-    if (hero.health > 0 && commsArray(hero)) {
+    if (routeToComms && hero.health > 0 && commsArray(hero)) {
         finale(hero);
-    } else {
+    } else if (!hero.gameEnded) {
         clearScreen();
         std::cout << "THE MISSION PAUSES\n\nYou awaken in an Aramore Station med bay, alive but changed. The relay still broadcasts beneath the station. Another mission awaits.\n";
     }

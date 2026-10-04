@@ -18,6 +18,7 @@ public:
     bool hasAlly = false;
     bool knowsPassword = false;
     bool alertRaised = false;
+    bool gameEnded = false;
     std::string lastDecision;
     MissionAdvantage advantage = MissionAdvantage::None;
 };

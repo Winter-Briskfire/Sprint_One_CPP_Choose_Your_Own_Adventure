@@ -119,6 +119,13 @@ int scenarioChoice(Hero& hero, const string& scenario, const vector<string>& cho
     hero.lastDecision = choices[selected - 1];
     return selected;
 }
+
+void showEarlyEnding(Hero& hero, const string& title, const string& outcome) {
+    hero.gameEnded = true;
+    clearScreen();
+    showStatus(hero);
+    cout << title << "\n\n" << outcome << "\n";
+}
 }
 
 void opening(const Hero& hero) {
@@ -208,7 +215,7 @@ void ruinsStart(Hero& hero) {
     pause();
 }
 
-void extendedMission(Hero& hero) {
+bool extendedMission(Hero& hero) {
     int choice = scenarioChoice(hero, "THE LONG APPROACH\n\nA civilian transport sends a distress call from a failing jump gate.", {"Stop and evacuate the passengers.", "Transmit repair instructions and continue.", "Salvage its navigation core."}, {ChoiceEffectiveness::High, ChoiceEffectiveness::Neutral, ChoiceEffectiveness::Low});
     if (choice == 1) { ++hero.civilianTrust; cout << "You lose time, but the passengers broadcast your rescue across the sector.\n"; }
     else if (choice == 2) { ++hero.clues; cout << "Your remote repair works. The captain sends you gate telemetry that matches the relay signal.\n"; }
@@ -229,11 +236,27 @@ void extendedMission(Hero& hero) {
         "The patrol captain quietly forwards a classified location from Veyr's security file: a research vessel drifting ahead of you.",
         "Your forged clearance gives you a temporary route through a quarantined research zone, where a derelict vessel is broadcasting.",
         "Your asteroid route brings you alongside an unlisted research vessel hidden in the debris."},
-        "The vessel repeats a fragment of the Sunken Star signal."), {"Decode the fragment from a distance.", "Board the vessel to retrieve its core.", "Destroy the transmitter before it spreads."}, {ChoiceEffectiveness::High, hero.hasDevice ? ChoiceEffectiveness::Neutral : ChoiceEffectiveness::Low, ChoiceEffectiveness::Low});
+        "The vessel repeats a fragment of the Sunken Star signal."), {"Decode the fragment from a distance.", "Board the vessel to retrieve its core.", "Destroy the transmitter before it spreads."}, {ChoiceEffectiveness::High, (hero.hasDevice || (hero.knowsPassword && hero.clues >= 2 && hero.signalStability > 0)) ? ChoiceEffectiveness::High : ChoiceEffectiveness::Low, ChoiceEffectiveness::Low});
     if (choice == 1) { ++hero.clues; ++hero.signalStability; cout << "The fragment reveals a relay failsafe and strengthens your understanding of the core.\n"; }
     else if (choice == 2) { --hero.health; hero.hasDevice = true; cout << "You retrieve a diagnostic core, but radiation leaks through your suit seal.\n"; }
     else { --hero.civilianTrust; cout << "The signal stops, but nearby scavengers accuse you of destroying valuable evidence.\n"; }
     pause();
+
+    // An exceptionally prepared operative can use the vessel's failsafe before
+    // the mission reaches Aramore. This creates a legitimate short success route.
+    if (hero.knowsPassword && hero.hasDevice && hero.clues >= 2 && hero.signalStability > 0) {
+        showEarlyEnding(hero, "THE REMOTE FAILSAFE ENDING",
+            "Your relay password, diagnostic device, and clean flight path form a complete authentication chain. From the research vessel, you activate the Sunken Star's original failsafe before Veyr can react. The hostile upload collapses, and Aramore wakes to open star lanes.");
+        return false;
+    }
+
+    // Three reckless choices in a row create a short, failed route instead of
+    // pretending that every decision leads to the same long mission.
+    if (hero.civilianTrust < 0 && hero.alertRaised && choice == 3) {
+        showEarlyEnding(hero, "THE INTERCEPTED SIGNAL ENDING",
+            "The stranded transport reports your salvage, the patrol recognizes the forged clearance, and the destroyed transmitter leaves no cover. Veyr's frigate locks onto your signal and forces you to retreat. The relay remains in enemy hands.");
+        return false;
+    }
 
     choice = scenarioChoice(hero, followUp(choice, {
         "The decoded fragment contains an emergency route, but a rogue broadcaster claims it is unsafe and offers a different passage.",
@@ -310,6 +333,7 @@ void extendedMission(Hero& hero) {
     else if (choice == 2) { --hero.health; ++hero.resolve; cout << "You make it through the surge, but your suit takes another hit.\n"; }
     else { hero.civilianTrust += 2; --hero.signalStability; cout << "The station survives the surge, though the relay core becomes more volatile.\n"; }
     pause();
+    return true;
 }
 
 bool commsArray(Hero& hero) {
